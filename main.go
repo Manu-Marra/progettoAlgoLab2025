@@ -1,107 +1,120 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "os"
-    "strings"
+	"bufio"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
 )
 
-// tipo dizionario rappresenta l’intero dizionario
-type dizionario struct {
-    parole  map[string]struct{}
-    schemi  map[string]struct{}
+// tipo Dizionario rappresenta l’intero Dizionario
+type Dizionario struct {
+	parole map[string]struct{}
+	schemi map[string]struct{}
 }
+
+type dizionario *Dizionario
 
 // crea() - crea un nuovo dizionario vuoto (azzera il dizionario)
-func crea(d *dizionario) {
-    d.parole = make(map[string]struct{})
-    d.schemi = make(map[string]struct{})
+func crea(d dizionario) {
+	d.parole = make(map[string]struct{})
+	d.schemi = make(map[string]struct{})
 }
 
-// newDizionario() - crea e restituisce un nuovo dizionario vuoto
+// che implementa l’operazione crea(), ovvero che crea un nuovo dizionario, lo inizializza e lo restituisce.
 func newDizionario() dizionario {
-    d := dizionario{}
-    crea(&d)
-    return d
+	return &Dizionario{
+		parole: make(map[string]struct{}),
+		schemi: make(map[string]struct{}),
+	}
 }
 
-func (d dizionario) inserisci(w string) {
-    if contieneMaiuscola(w) {
-        // è uno schema
-        _, exists := d.schemi[w]  // verifica se w è già presente in schemi
-        if !exists {
-            d.schemi[w] = struct{}{}
-        }
-    } else {
-        // è una parola
-        _, exists := d.parole[w]  // verifica se w è già presente in parole
-        if !exists {
-            d.parole[w] = struct{}{}
-        }
-    }
+func isValida(w string) bool {
+	regex := regexp.MustCompile(`^[a-zA-Z]+$`)
+	return regex.MatchString(w)
 }
 
-func (d dizionario) carica(file string) {
-    f, err := os.Open(file)
-    if err != nil {
-        // file non esiste o non può essere aperto, non fare nulla
-        return
-    }
-    defer f.Close()
+func inserisci(d dizionario, w string) {
 
-    scanner := bufio.NewScanner(f)
-    // scanner default split è ScanLines, cambiamo in ScanWords per token su spazi bianchi
-    scanner.Split(bufio.ScanWords)
-
-    for scanner.Scan() {
-        w := scanner.Text()
-        d.inserisci(w)
-    }
-    // Ignoriamo scanner.Err() per non bloccare l'esecuzione in caso di errori di lettura
+	if contieneMaiuscola(w) {
+		// è uno schema
+		_, exists := d.schemi[w] // verifica se w è già presente in schemi
+		if !exists {
+			d.schemi[w] = struct{}{}
+		}
+	} else {
+		// è una parola
+		_, exists := d.parole[w] // verifica se w è già presente in parole
+		if !exists {
+			d.parole[w] = struct{}{}
+		}
+	}
 }
 
-func (d dizionario) stampa_parole() {
-    fmt.Println("[")
-    for parola := range d.parole {
-        fmt.Println(parola)
-    }
-    fmt.Println("]")
+func carica(d dizionario, file string) {
+	f, err := os.Open(file)
+	if err != nil {
+		// file non esiste o non può essere aperto, non fare nulla
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	// scanner default split è ScanLines, cambiamo in ScanWords per token su spazi bianchi
+	scanner.Split(bufio.ScanWords)
+
+	for scanner.Scan() {
+		w := scanner.Text()
+		if isValida(w) {
+			inserisci(d, w)
+		} else {
+			fmt.Printf("formato errato per la parola/schema -> %s <-\n", w)
+		}
+	}
+	// Ignoriamo scanner.Err() per non bloccare l'esecuzione in caso di errori di lettura
+}
+
+func stampa_parole(d dizionario) {
+	fmt.Println("[")
+	for parola := range d.parole {
+		fmt.Println(parola)
+	}
+	fmt.Println("]")
 
 }
 
-func(d dizionario) stampa_schemi() {
-    fmt.Println("[")
-    for schema := range d.schemi {
-        fmt.Println(schema)
-    }
-    fmt.Println("]")
+func stampa_schemi(d dizionario) {
+	fmt.Println("[")
+	for schema := range d.schemi {
+		fmt.Println(schema)
+	}
+	fmt.Println("]")
 }
 
-func (d dizionario) elimina(w string) {
-    if contieneMaiuscola(w) {
-        // È uno schema
-        _, found := d.schemi[w]
-        if found {
-            delete(d.schemi, w)
-        }
-    } else {
-        // È una parola
-        _, found := d.parole[w]
-        if found {
-            delete(d.parole, w)
-        }
-    }
+func elimina(d dizionario, w string) {
+	if contieneMaiuscola(w) {
+		// È uno schema
+		_, found := d.schemi[w]
+		if found {
+			delete(d.schemi, w)
+		}
+	} else {
+		// È una parola
+		_, found := d.parole[w]
+		if found {
+			delete(d.parole, w)
+		}
+	}
 }
-
 
 func contieneMaiuscola(s string) bool {
-    for _, c := range s {
-        if c >= 'A' && c <= 'Z' {
-            return true
-        }
-    }
-    return false
+	for _, c := range s {
+		if c >= 'A' && c <= 'Z' {
+			return true
+		}
+	}
+	return false
 }
 
 // func (d dizionario) contiene(w string) bool {
@@ -109,56 +122,53 @@ func contieneMaiuscola(s string) bool {
 //     return esiste
 // }
 
-
 func min(a, b, c int) int {
-    if a < b {
-        if a < c {
-            return a
-        }
-        return c
-    }
-    if b < c {
-        return b
-    }
-    return c
+	if a < b {
+		if a < c {
+			return a
+		}
+		return c
+	}
+	if b < c {
+		return b
+	}
+	return c
 }
-
 
 func distanzaLevenshtein(s1, s2 string) int {
-    m := len(s1)
-    n := len(s2)
+	m := len(s1)
+	n := len(s2)
 
-    if n == 0 {
-        return m
-    }
-    if m == 0 {
-        return n
-    }
+	if n == 0 {
+		return m
+	}
+	if m == 0 {
+		return n
+	}
 
-    prev := make([]int, n+1)
-    curr := make([]int, n+1)
+	prev := make([]int, n+1)
+	curr := make([]int, n+1)
 
-    for j := 0; j <= n; j++ {
-        prev[j] = j
-    }
+	for j := 0; j <= n; j++ {
+		prev[j] = j
+	}
 
-    for i := 1; i <= m; i++ {
-        curr[0] = i
-        for j := 1; j <= n; j++ {
-            costo := 0
-            if s1[i-1] != s2[j-1] {
-                costo = 1
-            }
+	for i := 1; i <= m; i++ {
+		curr[0] = i
+		for j := 1; j <= n; j++ {
+			costo := 0
+			if s1[i-1] != s2[j-1] {
+				costo = 1
+			}
 
-            curr[j] = min(curr[j-1]+1,prev[j]+1,prev[j-1]+costo)
-        }
-        // Scambio dei riferimenti tra prev e curr
-        prev, curr = curr, prev
-    }
+			curr[j] = min(curr[j-1]+1, prev[j]+1, prev[j-1]+costo)
+		}
+		// Scambio dei riferimenti tra prev e curr
+		prev, curr = curr, prev
+	}
 
-    return prev[n]
+	return prev[n]
 }
-
 
 func isMaiuscola(r rune) bool {
 	return r >= 'A' && r <= 'Z'
@@ -193,30 +203,29 @@ func compatibile(parola, schema string) bool {
 	return true
 }
 
-
-func (d dizionario) ricerca(schema string) {
-    fmt.Printf("%s:[\n", schema)
-    // fmt.Println(schema,":[")
+func ricerca(d dizionario, schema string) {
+	fmt.Printf("%s:[\n", schema)
+	// fmt.Println(schema,":[")
 	for parola := range d.parole {
 		if compatibile(parola, schema) {
 			fmt.Println(parola)
 		}
 	}
-    fmt.Println("]")
+	fmt.Println("]")
 }
 
 func isSimile(x, y string) bool {
-    return distanzaLevenshtein(x,y) == 1
+	return distanzaLevenshtein(x, y) == 1
 }
 
-func (d dizionario)catena(x, y string) {
+func catena(d dizionario, x, y string) {
 
 	// Se x e y sono uguali, la catena è triviale
 	if x == y {
-        fmt.Println("(")
+		fmt.Println("(")
 		fmt.Println(x)
-        fmt.Println(")")
-        return
+		fmt.Println(")")
+		return
 	}
 
 	// Coda per la BFS
@@ -268,83 +277,92 @@ func ricostruisciCatena(predecessore map[string]string, inizio, fine string) {
 		catena = append([]string{predecessore[parola]}, catena...)
 	}
 	// Stampo la catena
-    fmt.Println("(")
+	fmt.Println("(")
 	for _, parola := range catena {
 		fmt.Println(parola)
 	}
-    fmt.Println(")")
+	fmt.Println(")")
 }
 
+func esegui(dizionario dizionario, s string) {
 
-func esegui(d dizionario, s string) {
-    campi := strings.Fields(s)
-    if len(campi) == 0 {
-        return
-    }
+	campi := strings.Fields(s)
+	if len(campi) == 0 {
+		return
+	}
 
-    switch campi[0] {
-    case "c":
-        if len(campi) == 1 {
-            // solo "c" → crea dizionario vuoto
-            crea(&d)
-        } else if len(campi) == 2 {
-            d.carica(campi[1])
+	switch campi[0] {
+	case "c":
+		if len(campi) == 1 {
+			crea(dizionario)
+			
 
-        } else if len(campi) == 3 {
-            // "c x y" → catena(x, y)
-            x, y := campi[1], campi[2]
-            d.catena(x, y)
-        } else {
-            fmt.Println("Comando errato")
-        }
+		} else if len(campi) == 2 { // CARICA
+			carica(dizionario, campi[1])
 
-    case "t":
-        fmt.Println("Esecuzione terminata")
-        os.Exit(0)
-    
-    case "p":
-        d.stampa_parole()
-    case "s":
-        d.stampa_schemi()
-    case "i":
-        d.inserisci(campi[1])
-    case "e":
-        d.elimina(campi[1])
-    case "r":
-        if len(campi) == 2 {
-            schema := campi[1]
-            d.ricerca(schema)
-        }
-    case "d":
-        if len(campi) < 3 {
-            fmt.Println("Manca uno degli argomenti per il comando d x y")
-            return
-        }
+		} else if len(campi) == 3 { // CATENA
+			// "c x y" → catena(x, y)
+			x, y := campi[1], campi[2]
+			catena(dizionario, x, y)
 
-        x := campi[1]
-        y := campi[2]
-        distanza := distanzaLevenshtein(x, y)
-        fmt.Println(distanza)
-    
-    default:
-        fmt.Println("Comando non riconosciuto")
-    }
+		} else {
+			fmt.Println("Comando errato")
+		}
+
+	case "t":
+		fmt.Println("Esecuzione terminata")
+		os.Exit(0)
+
+	case "p":
+		stampa_parole(dizionario)
+	case "s":
+		stampa_schemi(dizionario)
+	case "i":
+		if isValida(campi[1]) {
+			inserisci(dizionario, campi[1])
+		} else {
+			fmt.Println("Formato errato")
+		}
+	case "e":
+		elimina(dizionario, campi[1])
+	case "r":
+		if len(campi) == 2 {
+			schema := campi[1]
+			ricerca(dizionario, schema)
+		}
+	case "d":
+		if len(campi) < 3 {
+			fmt.Println("Manca uno degli argomenti per il comando d x y")
+			return
+		}
+
+		x := campi[1]
+		y := campi[2]
+		distanza := distanzaLevenshtein(x, y)
+		fmt.Println(distanza)
+
+	default:
+		fmt.Println("Comando non riconosciuto")
+	}
 }
 
 func main() {
-    diz := newDizionario()
-    scanner := bufio.NewScanner(os.Stdin)
+	// dizionario := newDizionario()
+	scanner := bufio.NewScanner(os.Stdin)
+	var d dizionario = newDizionario()
+	for scanner.Scan() {
+		linea := scanner.Text()
+		if linea == "" {
+			continue
+		}
+		// esegue il comando sulla linea letta
+		// esegui(dizionario, linea) -------
+		esegui(d, linea)
+		// fmt.Println("dizionario in main")
+		// dizionario.stampa_parole()
+	}
 
-    for scanner.Scan() {
-        linea := scanner.Text()
-        if linea == "" {
-            continue
-        }
-        // esegue il comando sulla linea letta
-        esegui(diz, linea)
-    }
-
-    if err := scanner.Err(); err != nil {
-        fmt.Fprintln(os.Stderr, "Errore di lettura:", err)
-    }
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "Errore di lettura:", err)
+	}
 }
