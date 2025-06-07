@@ -35,18 +35,34 @@ func isValida(w string) bool {
 	return regex.MatchString(w)
 }
 
+func esisteParola(d dizionario, w string) bool {
+	_, esiste := d.parole[w]
+	return esiste
+}
+
+func esisteSchema(d dizionario, w string) bool {
+	_, esiste := d.schemi[w]
+	return esiste
+}
+
 func inserisci(d dizionario, w string) {
 
 	if contieneMaiuscola(w) {
 		// è uno schema
-		_, exists := d.schemi[w] // verifica se w è già presente in schemi
-		if !exists {
+		// _, esiste := d.schemi[w] // verifica se w è già presente in schemi
+		// if !esiste {
+		// 	d.schemi[w] = struct{}{}
+		// }
+		if !esisteSchema(d, w) {
 			d.schemi[w] = struct{}{}
 		}
 	} else {
 		// è una parola
-		_, exists := d.parole[w] // verifica se w è già presente in parole
-		if !exists {
+		// _, esiste := d.parole[w] // verifica se w è già presente in parole
+		// if !esiste {
+		// 	d.parole[w] = struct{}{}
+		// }
+		if !esisteParola(d, w) {
 			d.parole[w] = struct{}{}
 		}
 	}
@@ -72,7 +88,7 @@ func carica(d dizionario, file string) {
 			fmt.Printf("formato errato per la parola/schema -> %s <-\n", w)
 		}
 	}
-	// Ignoriamo scanner.Err() per non bloccare l'esecuzione in caso di errori di lettura
+	// Ignoro scanner.Err() per non bloccare l'esecuzione in caso di errori di lettura
 }
 
 func stampa_parole(d dizionario) {
@@ -95,15 +111,22 @@ func stampa_schemi(d dizionario) {
 func elimina(d dizionario, w string) {
 	if contieneMaiuscola(w) {
 		// È uno schema
-		_, found := d.schemi[w]
-		if found {
+		// _, esiste := d.schemi[w]
+		// if esiste {
+		// 	delete(d.schemi, w)
+		// }
+		if esisteSchema(d, w) {
 			delete(d.schemi, w)
 		}
 	} else {
 		// È una parola
-		_, found := d.parole[w]
-		if found {
-			delete(d.parole, w)
+		// _, esiste := d.parole[w]
+		// if esiste {
+		// 	delete(d.parole, w)
+		// }
+
+		if esisteParola(d, w) {
+			delete(d.parole, w)			
 		}
 	}
 }
@@ -185,8 +208,8 @@ func compatibile(parola, schema string) bool {
 		p := rune(parola[i])
 
 		if isMaiuscola(c) {
-			val, exists := mappa[c]
-			if exists {
+			val, esiste := mappa[c]
+			if esiste {
 				if val != p {
 					return false
 				}
@@ -244,7 +267,7 @@ func catena(d dizionario, x, y string) {
 
 		// Scorro tutte le parole nel dizionario
 		for parolaVicino := range d.parole {
-			// Se già visitata, skippo
+			// Se già visitata, skippo/continuo
 			if visitato[parolaVicino] {
 				continue
 			}
@@ -284,18 +307,19 @@ func ricostruisciCatena(predecessore map[string]string, inizio, fine string) {
 	fmt.Println(")")
 }
 
-func esegui(dizionario dizionario, s string) {
 
+
+func esegui(dizionario dizionario, s string) {
+	formatoErrato := "Formato errato per il comando"
 	campi := strings.Fields(s)
 	if len(campi) == 0 {
 		return
 	}
 
 	switch campi[0] {
-	case "c":
-		if len(campi) == 1 {
-			crea(dizionario)
-			
+	case "c": // INIZIALIZZA "c", CARICA FILE "c nomeFile", CATENA "c x y"
+		if len(campi) == 1 { // CREA
+			crea(dizionario)	
 
 		} else if len(campi) == 2 { // CARICA
 			carica(dizionario, campi[1])
@@ -306,33 +330,64 @@ func esegui(dizionario dizionario, s string) {
 			catena(dizionario, x, y)
 
 		} else {
-			fmt.Println("Comando errato")
+			fmt.Println(formatoErrato, "c")
 		}
 
-	case "t":
+	case "t": // TERMINA ESECUZIONE
 		fmt.Println("Esecuzione terminata")
 		os.Exit(0)
 
-	case "p":
+	case "p": // STAMPA PAROLE
+		if len(campi) != 1 {
+			fmt.Println(formatoErrato, "p")
+			return
+		}
 		stampa_parole(dizionario)
-	case "s":
+
+	case "s": // STAMPA SCHEMI 
+		if len(campi) != 1 {
+			fmt.Println(formatoErrato, "s")
+			return
+		}
 		stampa_schemi(dizionario)
-	case "i":
+
+	case "i": // INSERISCI PAROLA/SCHEMA
+		if len(campi) != 2 {
+			fmt.Println(formatoErrato, "i")
+			return
+		}
+
 		if isValida(campi[1]) {
 			inserisci(dizionario, campi[1])
 		} else {
-			fmt.Println("Formato errato")
+			fmt.Println("Parola/schema non valida")
 		}
-	case "e":
+
+	case "e": // ELIMINA PAROLA/SCHEMA
+		if len(campi) != 2 {
+			fmt.Println(formatoErrato, "e")
+			return
+		}
 		elimina(dizionario, campi[1])
-	case "r":
+
+	case "r": // STAMPA LO SCHEMA E LE PAROLE COMPATIBILI
 		if len(campi) == 2 {
 			schema := campi[1]
-			ricerca(dizionario, schema)
+			if esisteSchema(dizionario, schema) {
+				ricerca(dizionario, schema)
+				
+			} else {
+				fmt.Println("Schema non esistente nel dizionario")
+				
+			}
+		} else {
+			fmt.Println(formatoErrato, "r")
+
+			
 		}
-	case "d":
-		if len(campi) < 3 {
-			fmt.Println("Manca uno degli argomenti per il comando d x y")
+	case "d": // STAMPA DISTANZA DI EDITING
+		if len(campi) != 3 {
+			fmt.Println(formatoErrato, "d")
 			return
 		}
 
@@ -347,7 +402,25 @@ func esegui(dizionario dizionario, s string) {
 }
 
 func main() {
-	// dizionario := newDizionario()
+
+	fmt.Println("\n___   ---   ===   ^^^   ***   |||||   ***   ^^^   ===   ---   ___   ---   ===   ^^^   ***   |||||   ***   ^^^   ===   ---   ___\n",
+	"\n	PROGETTO \"PAROLE E CATENE DI PAROLE\", LABORATORIO DI ALGORITMI E STRUTTURE DATI\n",
+	"\nGestione di un dizionario di parole e schemi.\n",
+	"Comandi:\n",
+	"c ------> Crea un nuovo dizionario vuoto (eliminando l'eventuale dizionario già esistente).\n",
+	"t ------> Termina esecuzione.\n",
+	"c file -> Inserisce nel dizionario le parole e/o gli schemi contenuti nel file \"file\".\n",
+	"p ------> Stampa tutte le parole del dizionario.\n",
+	"s ------> Stampa tutti gli schemi del dizionario.\n",
+	"i w ----> Inserisce nel dizionario la parola / lo schema w.\n",
+	"e w ----> Elimina dal dizionario la parola / lo schema w.\n",
+	"r S ----> Stampa lo schema S e poi l'insieme di tutte le parole nel dizionario che sono compatibili con lo schema S.\n",
+	"d x y --> Stampa la distanza di editing fra le due parole x e y.\n",
+	"c x y --> Stampa una catena di lunghezza minima tra x e y di parole nel dizionario.\n",
+	"\n‾‾‾   ---   ===   vvv   ***   |||||   ***   vvv   ===   ---   ‾‾‾   ---   ===   vvv   ***   |||||   ***   vvv   ===   ---   ‾‾‾\n",
+	"\nInserisci i comandi: ")
+
+
 	scanner := bufio.NewScanner(os.Stdin)
 	var d dizionario = newDizionario()
 	for scanner.Scan() {
@@ -356,13 +429,11 @@ func main() {
 			continue
 		}
 		// esegue il comando sulla linea letta
-		// esegui(dizionario, linea) -------
 		esegui(d, linea)
-		// fmt.Println("dizionario in main")
-		// dizionario.stampa_parole()
 	}
 
-	if err := scanner.Err(); err != nil {
+	err := scanner.Err();
+	if  err != nil {
 		fmt.Fprintln(os.Stderr, "Errore di lettura:", err)
 	}
 }
