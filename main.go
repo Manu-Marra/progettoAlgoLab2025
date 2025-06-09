@@ -8,76 +8,71 @@ import (
 	"strings"
 )
 
-// tipo Dizionario rappresenta l’intero Dizionario
+// Definizione del tipo Dizionario contenente le parole e schemi
 type Dizionario struct {
 	parole map[string]struct{}
 	schemi map[string]struct{}
 }
 
+// Definizione del tipo dizionario per rispettare la segnatura e passare Dizionario come riferimento
 type dizionario *Dizionario
 
-// crea() - crea un nuovo dizionario vuoto (azzera il dizionario)
+// Assegna a ciascuna mappa del dizionario d una nuova mappa vuota
 func crea(d dizionario) {
 	d.parole = make(map[string]struct{})
 	d.schemi = make(map[string]struct{})
 }
 
-// che implementa l’operazione crea(), ovvero che crea un nuovo dizionario, lo inizializza e lo restituisce.
+// Inizializza il dizionario, chiama crea(), restituisce il dizionario
 func newDizionario() dizionario {
-	return &Dizionario{
-		parole: make(map[string]struct{}),
-		schemi: make(map[string]struct{}),
-	}
+	dizionario := &Dizionario{}
+	crea(dizionario)
+	return dizionario
 }
 
+// Controlla se una stringa w appartiene all'alfabeto inglese minuscolo o maiuscolo
 func isValida(w string) bool {
 	regex := regexp.MustCompile(`^[a-zA-Z]+$`)
 	return regex.MatchString(w)
 }
 
+// Verifica l'esistenza di una parola w all'interno del dizionario d
 func esisteParola(d dizionario, w string) bool {
 	_, esiste := d.parole[w]
 	return esiste
 }
-
+// Verifica l'esistenza di uno schema w all'interno del dizionario d
 func esisteSchema(d dizionario, w string) bool {
 	_, esiste := d.schemi[w]
 	return esiste
 }
 
+// Inserisce all'interno del dizionario d la stringa w
 func inserisci(d dizionario, w string) {
 
 	if contieneMaiuscola(w) {
-		// è uno schema
-		// _, esiste := d.schemi[w] // verifica se w è già presente in schemi
-		// if !esiste {
-		// 	d.schemi[w] = struct{}{}
-		// }
+
 		if !esisteSchema(d, w) {
 			d.schemi[w] = struct{}{}
 		}
 	} else {
-		// è una parola
-		// _, esiste := d.parole[w] // verifica se w è già presente in parole
-		// if !esiste {
-		// 	d.parole[w] = struct{}{}
-		// }
+
 		if !esisteParola(d, w) {
 			d.parole[w] = struct{}{}
 		}
 	}
 }
 
+// Carica sul dizionario d le parole/schemi del file file
 func carica(d dizionario, file string) {
 	f, err := os.Open(file)
 	if err != nil {
-		// file non esiste o non può essere aperto, non fare nulla
+		// file non esistente -> non fare nulla
 		return
 	}
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	// scanner default split è ScanLines, cambiamo in ScanWords per token su spazi bianchi
 	scanner.Split(bufio.ScanWords)
 
 	for scanner.Scan() {
@@ -91,6 +86,7 @@ func carica(d dizionario, file string) {
 	// Ignoro scanner.Err() per non bloccare l'esecuzione in caso di errori di lettura
 }
 
+// Stampa le parole presenti sul dizionario d
 func stampa_parole(d dizionario) {
 	fmt.Println("[")
 	for parola := range d.parole {
@@ -100,6 +96,7 @@ func stampa_parole(d dizionario) {
 
 }
 
+// Stampa gli schemi presenti sul dizionario d
 func stampa_schemi(d dizionario) {
 	fmt.Println("[")
 	for schema := range d.schemi {
@@ -108,22 +105,14 @@ func stampa_schemi(d dizionario) {
 	fmt.Println("]")
 }
 
+// se presenti, Elimina le parole/schemi w dal dizionario d 
 func elimina(d dizionario, w string) {
 	if contieneMaiuscola(w) {
-		// È uno schema
-		// _, esiste := d.schemi[w]
-		// if esiste {
-		// 	delete(d.schemi, w)
-		// }
+
 		if esisteSchema(d, w) {
 			delete(d.schemi, w)
 		}
 	} else {
-		// È una parola
-		// _, esiste := d.parole[w]
-		// if esiste {
-		// 	delete(d.parole, w)
-		// }
 
 		if esisteParola(d, w) {
 			delete(d.parole, w)			
@@ -131,6 +120,7 @@ func elimina(d dizionario, w string) {
 	}
 }
 
+// Se la stringa s contiene almeno una lettera maiuscola dell'alfabeto inglese restituisce true, false altrimenti
 func contieneMaiuscola(s string) bool {
 	for _, c := range s {
 		if c >= 'A' && c <= 'Z' {
@@ -140,11 +130,7 @@ func contieneMaiuscola(s string) bool {
 	return false
 }
 
-// func (d dizionario) contiene(w string) bool {
-//     _, esiste := d.parole[w]
-//     return esiste
-// }
-
+// Calcola il minimo tra gli interi a, b, c
 func min(a, b, c int) int {
 	if a < b {
 		if a < c {
@@ -158,7 +144,8 @@ func min(a, b, c int) int {
 	return c
 }
 
-func distanzaLevenshtein(s1, s2 string) int {
+// Restituisce la distanza di editing tra le stringhe s1 ed s2, utilizzando l'algoritmo di Levenshtein
+func distanza(s1, s2 string) int {
 	m := len(s1)
 	n := len(s2)
 
@@ -193,10 +180,12 @@ func distanzaLevenshtein(s1, s2 string) int {
 	return prev[n]
 }
 
+// Restituisce true se la runa r è maiuscola, false altrimenti
 func isMaiuscola(r rune) bool {
 	return r >= 'A' && r <= 'Z'
 }
 
+// Restituisce true se la parola parola è compatibile con lo schema schema, false altrimenti
 func compatibile(parola, schema string) bool {
 	if len(parola) != len(schema) {
 		return false
@@ -226,9 +215,10 @@ func compatibile(parola, schema string) bool {
 	return true
 }
 
+// Stampa le parole compatibili con lo schema schema del dizionario d
 func ricerca(d dizionario, schema string) {
+
 	fmt.Printf("%s:[\n", schema)
-	// fmt.Println(schema,":[")
 	for parola := range d.parole {
 		if compatibile(parola, schema) {
 			fmt.Println(parola)
@@ -237,13 +227,19 @@ func ricerca(d dizionario, schema string) {
 	fmt.Println("]")
 }
 
+// Restituisce true se la distanza di editing tra le stringhe x e y è 1, false altrimenti
 func isSimile(x, y string) bool {
-	return distanzaLevenshtein(x, y) == 1
+	return distanza(x, y) == 1
 }
 
+// Se esiste, stampa una catena di lunghezza minima tra le stringhe x e y appartenenti al dizionario d
 func catena(d dizionario, x, y string) {
 
-	// Se x e y sono uguali, la catena è triviale
+	if !esisteParola(d, x) || !esisteParola(d, y) {
+		fmt.Println("Parole non presenti nel dizionario.")
+		return
+	}
+
 	if x == y {
 		fmt.Println("(")
 		fmt.Println(x)
@@ -288,7 +284,7 @@ func catena(d dizionario, x, y string) {
 		}
 	}
 
-	// Se esco dal ciclo senza aver trovato y
+	// Se esco dal ciclo senza aver trovato y la catena non esiste
 	fmt.Println("non esiste")
 }
 
@@ -307,8 +303,7 @@ func ricostruisciCatena(predecessore map[string]string, inizio, fine string) {
 	fmt.Println(")")
 }
 
-
-
+// Attraverso la stringa s, esegue le varie operazioni sul dizionario d
 func esegui(dizionario dizionario, s string) {
 	formatoErrato := "Formato errato per il comando"
 	campi := strings.Fields(s)
@@ -325,7 +320,6 @@ func esegui(dizionario dizionario, s string) {
 			carica(dizionario, campi[1])
 
 		} else if len(campi) == 3 { // CATENA
-			// "c x y" → catena(x, y)
 			x, y := campi[1], campi[2]
 			catena(dizionario, x, y)
 
@@ -352,39 +346,41 @@ func esegui(dizionario dizionario, s string) {
 		stampa_schemi(dizionario)
 
 	case "i": // INSERISCI PAROLA/SCHEMA
-		if len(campi) != 2 {
+
+		if len(campi) != 2 { // Controllo formato comando
 			fmt.Println(formatoErrato, "i")
 			return
 		}
 
-		if isValida(campi[1]) {
-			inserisci(dizionario, campi[1])
-		} else {
+		if !isValida(campi[1]) { // controllo formato parola/schema 
 			fmt.Println("Parola/schema non valida")
+			return
 		}
+		inserisci(dizionario, campi[1])
 
 	case "e": // ELIMINA PAROLA/SCHEMA
-		if len(campi) != 2 {
+	
+		if len(campi) != 2 { // Controllo formato comando
 			fmt.Println(formatoErrato, "e")
 			return
 		}
 		elimina(dizionario, campi[1])
 
 	case "r": // STAMPA LO SCHEMA E LE PAROLE COMPATIBILI
-		if len(campi) == 2 {
-			schema := campi[1]
-			if esisteSchema(dizionario, schema) {
-				ricerca(dizionario, schema)
-				
-			} else {
-				fmt.Println("Schema non esistente nel dizionario")
-				
-			}
-		} else {
-			fmt.Println(formatoErrato, "r")
 
-			
+		if len(campi) != 2 { // Controllo formato comando
+			fmt.Println(formatoErrato, "r")
+			return
 		}
+
+		schema := campi[1]
+		if !esisteSchema(dizionario, schema) { // Schema non esistente nel dizionario
+			fmt.Println("Schema non esistente nel dizionario")		
+			return
+		}
+
+		ricerca(dizionario, schema)		
+
 	case "d": // STAMPA DISTANZA DI EDITING
 		if len(campi) != 3 {
 			fmt.Println(formatoErrato, "d")
@@ -393,7 +389,7 @@ func esegui(dizionario dizionario, s string) {
 
 		x := campi[1]
 		y := campi[2]
-		distanza := distanzaLevenshtein(x, y)
+		distanza := distanza(x, y)
 		fmt.Println(distanza)
 
 	default:
