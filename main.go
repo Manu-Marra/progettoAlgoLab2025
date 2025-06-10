@@ -215,7 +215,7 @@ func compatibile(parola, schema string) bool {
 	return true
 }
 
-// Stampa le parole compatibili con lo schema schema del dizionario d
+// Stampa le parole del dizionario d compatibili con lo schema schema
 func ricerca(d dizionario, schema string) {
 
 	fmt.Printf("%s:[\n", schema)
@@ -236,7 +236,7 @@ func isSimile(x, y string) bool {
 func catena(d dizionario, x, y string) {
 
 	if !esisteParola(d, x) || !esisteParola(d, y) {
-		fmt.Println("Parole non presenti nel dizionario.")
+		fmt.Println("non esiste") // Parole non presenti nel dizionario 
 		return
 	}
 
@@ -374,10 +374,10 @@ func esegui(dizionario dizionario, s string) {
 		}
 
 		schema := campi[1]
-		if !esisteSchema(dizionario, schema) { // Schema non esistente nel dizionario
-			fmt.Println("Schema non esistente nel dizionario")		
-			return
-		}
+		// if !esisteSchema(dizionario, schema) { // Schema non esistente nel dizionario
+		// 	fmt.Println("Schema non esistente nel dizionario")		
+		// 	return
+		// }
 
 		ricerca(dizionario, schema)		
 
